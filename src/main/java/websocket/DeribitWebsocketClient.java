@@ -54,6 +54,8 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
             for (;;) {
 
+                System.out.println("position check");
+
                 try {
                     getPositions();
                 } catch (Exception e) {
@@ -193,6 +195,11 @@ public class DeribitWebsocketClient extends WebSocketClient {
             tradeMessage(message);
         } else if (message.contains("estLiqPrice") && message.contains("realizedPl") && message.contains("maintenanceMargin")) {
             positionMessage(message);
+        } else if (message.contains("\"result\":[]")) {
+            //empty position
+            System.out.println("empty position..");
+            positionMessage(message);
+
         }
 
 
@@ -203,18 +210,37 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
     private void positionMessage(String message) {
 
-        String contracts = message.substring(message.indexOf("\"size\":") + 7, message.indexOf(",\"amount"));
-        String side = message.substring(message.indexOf("direction\":\"") + 12, message.indexOf("\",\"sizeBtc"));
-        String entry = message.substring(message.indexOf("\"averagePrice\":") + 15, message.indexOf(",\"direction"));
-        String liq = message.substring(message.indexOf("\"estLiqPrice\":") + 14, message.indexOf(",\"markPrice"));
-
-        String upnl = message.substring(message.indexOf("\"floatingPl\":") + 13, message.indexOf(",\"realizedPl"));
-
-        String rpnl = message.substring(message.indexOf("realizedPl\":") + 12, message.indexOf(",\"estLiqPr"));
+        String contracts = "";
+        String side = "";
+        String entry = "";
+        String liq = "";
+        String upnl = "";
+        String rpnl = "";
 
 
-        ScaledOrderPanel.updatePosition(side, Double.valueOf(contracts), Double.valueOf(entry), Double.valueOf(liq), Double.valueOf(upnl), Double.valueOf(rpnl));
+        try {
 
+            contracts = message.substring(message.indexOf("\"size\":") + 7, message.indexOf(",\"amount"));
+            side = message.substring(message.indexOf("direction\":\"") + 12, message.indexOf("\",\"sizeBtc"));
+            entry = message.substring(message.indexOf("\"averagePrice\":") + 15, message.indexOf(",\"direction"));
+            liq = message.substring(message.indexOf("\"estLiqPrice\":") + 14, message.indexOf(",\"markPrice"));
+
+            upnl = message.substring(message.indexOf("\"floatingPl\":") + 13, message.indexOf(",\"realizedPl"));
+            rpnl = message.substring(message.indexOf("realizedPl\":") + 12, message.indexOf(",\"estLiqPr"));
+
+        } catch (Exception e) {
+
+        }
+
+        System.out.println("got position - " + message);
+
+        if (!message.contains("\"result\":[]")) {
+            ScaledOrderPanel.updatePosition(side, Double.valueOf(contracts), Double.valueOf(entry), Double.valueOf(liq), Double.valueOf(upnl), Double.valueOf(rpnl));
+
+        } else {
+            System.out.println("setting 0 position");
+            ScaledOrderPanel.updatePosition("flat", 0, 0, 0,0,0);
+        }
     }
 
     private void tradeMessage(String message) {
@@ -242,9 +268,13 @@ public class DeribitWebsocketClient extends WebSocketClient {
                     BidAsk.setAsk(Double.valueOf(price) + 0.5);
                 }
 
+                ScaledOrderPanel.updateCurrentBid(Double.valueOf(price));
+
             }
 
             System.out.println("new bidask: " + BidAsk.getBid() + "/" + BidAsk.getAsk());
+
+
 
 
         } catch (Exception e) {

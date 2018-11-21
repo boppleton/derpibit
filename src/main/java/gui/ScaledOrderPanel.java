@@ -475,7 +475,7 @@ public class ScaledOrderPanel extends JPanel {
         // total contracts
         JPanel totalContractsPanel = new JPanel(new BorderLayout());
         totalContractsPanel.setBorder(BorderFactory.createTitledBorder("total amount"));
-        totalContractsField = new JSpinner(new SpinnerNumberModel(5000, .001, 10000000, 1000));
+        totalContractsField = new JSpinner(new SpinnerNumberModel(100, 1, 10000000, 10));
         totalContractsPanel.add(totalContractsField, BorderLayout.CENTER);
         gbc.weightx = 1;
         gbc.gridy++;
@@ -486,7 +486,7 @@ public class ScaledOrderPanel extends JPanel {
         // # of orders
         JPanel numOrdersPanel = new JPanel(new BorderLayout());
         numOrdersPanel.setBorder(BorderFactory.createTitledBorder("# of orders"));
-        numOrdersSpinner = new JSpinner(new SpinnerNumberModel(10, 1, 200, 1));
+        numOrdersSpinner = new JSpinner(new SpinnerNumberModel(10, 1, 200, 10));
         numOrdersPanel.add(numOrdersSpinner, BorderLayout.CENTER);
         gbc.gridy++;
         leftPanel.add(numOrdersPanel, gbc);
@@ -499,8 +499,11 @@ public class ScaledOrderPanel extends JPanel {
 
         priceButton = new JRadioButton("price");
         priceButton.setEnabled(!buildDialog);
+        priceButton.setSelected(true);
         priceTypePanel.add(priceButton);
         priceTypePanel.add(Box.createHorizontalStrut(40));
+
+
 
 
         priceButton.addActionListener(new ActionListener() {
@@ -520,7 +523,7 @@ public class ScaledOrderPanel extends JPanel {
         priceTypePanel.add(Box.createHorizontalStrut(5));
 
         percentButton = new JRadioButton("%");
-        percentButton.setSelected(true);
+//        percentButton.setSelected(true);
         priceTypePanel.add(percentButton);
 
         percentButton.addActionListener(new ActionListener() {
@@ -593,8 +596,11 @@ public class ScaledOrderPanel extends JPanel {
         gbc.gridy++;
         leftPanel.add(lowerPricePanel, gbc);
 
-        upperPricePanel.setVisible(false);
-        lowerPricePanel.setVisible(false);
+        pricePercentPanel.setVisible(false);
+        priceGapPanel.setVisible(false);
+
+        upperPricePanel.setVisible(true);
+        lowerPricePanel.setVisible(true);
 
         // distribution
         JPanel distributionPanel = new JPanel(new GridBagLayout());
@@ -671,6 +677,7 @@ public class ScaledOrderPanel extends JPanel {
         positionPanel.setBorder(BorderFactory.createTitledBorder("current position"));
         gbc.gridy++;
         add(positionPanel, gbc);
+        gbc.insets = new Insets(5,5,5,5);
 
         positionLabel = new JLabel(" long 1000  ");
         positionLabel.setForeground(Color.green);
@@ -688,17 +695,15 @@ public class ScaledOrderPanel extends JPanel {
 
         //////buttons here todo:
 
-        JButton button2 = new JButton("close limitchase");
-
-        gbc.gridx++;
-        positionPanel.add(button2, gbc);
-
-        JButton button1 = new JButton("close market");
+        JButton button1 = new JButton("close");
 
         gbc.gridx++;
         positionPanel.add(button1, gbc);
 
 
+        gbc.gridx++;
+        gbc.weightx = 1;
+        positionPanel.add(new JLabel(), gbc);
 
 
 
@@ -754,6 +759,28 @@ public class ScaledOrderPanel extends JPanel {
         gbc.gridy++;
         infoPanel.add(rpnlLabel, gbc);
 
+
+
+        JPanel pricePanel = new JPanel(new GridBagLayout());
+        pricePanel.setBorder(BorderFactory.createTitledBorder("price"));
+        gbc.gridy++;
+        add(pricePanel, gbc);
+
+
+        currentBidLabel = new JLabel("current bid: x");
+        currentBidLabel.setFont(new Font(Font.SANS_SERIF, 0,20));
+
+        pricePanel.add(currentBidLabel, gbc);
+
+
+    }
+
+    static JLabel currentBidLabel;
+
+    public static void updateCurrentBid(double bid) {
+
+        currentBidLabel.setText("current bid: " + bid);
+
     }
 
     static JLabel positionLabel;
@@ -765,22 +792,23 @@ public class ScaledOrderPanel extends JPanel {
 
     public static void updatePosition(String side, double pos, double entry, double liq, double upnl, double rpnl) {
 
+        System.out.println("updating position " + side + pos + " " + entry);
 
         if (pos == 0) {
             positionLabel.setForeground(Color.yellow);
-            positionLabel.setText("flat ");
+            positionLabel.setText(" flat ");
         } else if (side.toLowerCase().contains("buy")) {
             positionLabel.setForeground(Color.green);
-            positionLabel.setText("long " + (int)pos + " ");
+            positionLabel.setText(" long " + (int)pos + " ");
         } else if (side.toLowerCase().contains("sell")) {
             positionLabel.setForeground(Color.red);
-            positionLabel.setText("short " + (int)pos + " ");
+            positionLabel.setText(" short " + (int)pos + " ");
         }
 
         entryLabel.setText(" entry: " + BigDecimal.valueOf(entry).setScale(2, RoundingMode.HALF_EVEN));
         liqLabel.setText(" liq: " + BigDecimal.valueOf(liq).setScale(2, RoundingMode.HALF_EVEN));
         upnlLabel.setText(" upnl: " + BigDecimal.valueOf(upnl).setScale(4, RoundingMode.HALF_EVEN));
-        rpnlLabel.setText("rpnl: " + BigDecimal.valueOf(rpnl).setScale(4, RoundingMode.HALF_EVEN));
+        rpnlLabel.setText(" rpnl: " + BigDecimal.valueOf(rpnl).setScale(4, RoundingMode.HALF_EVEN));
 
     }
 

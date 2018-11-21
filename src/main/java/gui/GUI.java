@@ -13,6 +13,8 @@ public class GUI  extends JFrame {
         gui = this;
 
 
+        setTitle("derpibit v1.0");
+
         GridBagConstraints gbc = new GridBagConstraints();
 
         JPanel mainPanel = new JPanel(new GridBagLayout());
