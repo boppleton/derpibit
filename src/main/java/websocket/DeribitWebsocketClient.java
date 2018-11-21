@@ -6,6 +6,7 @@ import gui.ScaledOrderPanel;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import utils.Formatter;
+import utils.Lines;
 import utils.ScaledOrder;
 
 
@@ -26,12 +27,15 @@ public class DeribitWebsocketClient extends WebSocketClient {
         super(new URI("wss://www.deribit.com/ws/api/v1/"));
 
         instance = this;
-        this.k = k;
-        this.s = s;
+
+        String[] acc = Lines.getAccount();
+
+        this.k = acc[0];
+        this.s = acc[1];
 
         connectBlocking();
 
-        System.out.println(k + " --- " + s);
+//        System.out.println(k + " --- " + s);
 
         initialSubs();
 
@@ -54,7 +58,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
             for (;;) {
 
-                System.out.println("position check");
+//                System.out.println("position check");
 
                 try {
                     getPositions();
@@ -187,7 +191,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
     @Override
     public void onMessage(String message) {
 
-        System.out.println(message);
+//        System.out.println(message);
 
         if (message.contains("\"success\":true,\"message\":\"subscribed\"")) {
             System.out.println("successfully connected to deribit websocket");
@@ -197,7 +201,6 @@ public class DeribitWebsocketClient extends WebSocketClient {
             positionMessage(message);
         } else if (message.contains("\"result\":[]")) {
             //empty position
-            System.out.println("empty position..");
             positionMessage(message);
 
         }
@@ -232,13 +235,13 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
         }
 
-        System.out.println("got position - " + message);
+//        System.out.println("got position - " + message);
 
         if (!message.contains("\"result\":[]")) {
             ScaledOrderPanel.updatePosition(side, Double.valueOf(contracts), Double.valueOf(entry), Double.valueOf(liq), Double.valueOf(upnl), Double.valueOf(rpnl));
 
         } else {
-            System.out.println("setting 0 position");
+//            System.out.println("setting 0 position");
             ScaledOrderPanel.updatePosition("flat", 0, 0, 0,0,0);
         }
     }
@@ -249,7 +252,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
             String[] trades = message.split("\"quantity\":");
 
-            System.out.println("new trade bunch:");
+//            System.out.println("new trade bunch:");
 
             for (String s : trades) {
 //                System.out.println("trade: " + s);
@@ -258,7 +261,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
                 String side = message.substring(message.indexOf("direction\":\"") + 12, message.indexOf("\",\"orderId"));
                 String price = message.substring(message.indexOf("price\":") + 7, message.indexOf(",\"direction"));
 
-                System.out.println("[" + side + "] contracts[" + contracts + "] price[" + price + "]");
+//                System.out.println("[" + side + "] contracts[" + contracts + "] price[" + price + "]");
 
                 if (side.contains("bid")) {
                     BidAsk.setAsk(Double.valueOf(price));
@@ -272,7 +275,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
             }
 
-            System.out.println("new bidask: " + BidAsk.getBid() + "/" + BidAsk.getAsk());
+//            System.out.println("new bidask: " + BidAsk.getBid() + "/" + BidAsk.getAsk());
 
 
 

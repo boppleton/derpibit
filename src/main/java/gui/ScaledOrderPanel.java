@@ -249,9 +249,9 @@ public class ScaledOrderPanel extends JPanel {
         int amtscale = 0;
 
 
-        System.out.println(roundscale);
+//        System.out.println(roundscale);
 
-        System.out.println("starting orders..");
+//        System.out.println("starting orders..");
 
 
         if (bidsButton.isSelected() && t.getPrice().doubleValue() > BidAsk.getBid() || (asksButton.isSelected() && t.getPrice().doubleValue() < BidAsk.getAsk())) {
@@ -361,7 +361,7 @@ public class ScaledOrderPanel extends JPanel {
         startButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("placing scaled order");
+//                System.out.println("placing scaled order");
 //                new ScaledOrder(5000);
             }
         });
@@ -792,7 +792,7 @@ public class ScaledOrderPanel extends JPanel {
 
     public static void updatePosition(String side, double pos, double entry, double liq, double upnl, double rpnl) {
 
-        System.out.println("updating position " + side + pos + " " + entry);
+//        System.out.println("updating position " + side + pos + " " + entry);
 
         if (pos == 0) {
             positionLabel.setForeground(Color.yellow);
