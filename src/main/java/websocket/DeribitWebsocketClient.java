@@ -2,9 +2,11 @@ package websocket;
 
 import data.BidAsk;
 import gui.GUI;
+import gui.ScaledOrderPanel;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import utils.Formatter;
+import utils.ScaledOrder;
 
 
 import java.net.URI;
@@ -33,6 +35,8 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
         initialSubs();
 
+        startPositionsThread();
+
 //        limit(false, 5, 7000);
 
 //        Thread.sleep(5000);
@@ -44,9 +48,29 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
     }
 
+    private void startPositionsThread() {
 
+        Thread t = new Thread(()->{
 
+            for (;;) {
 
+                try {
+                    getPositions();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    Thread.sleep(5000);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+        });
+        t.start();
+    }
 
 
     ////
@@ -114,6 +138,20 @@ public class DeribitWebsocketClient extends WebSocketClient {
     }
 
     ////
+    //  get positions
+    ///
+
+    public void getPositions() throws NoSuchAlgorithmException {
+        ArrayList<String> argnames = new ArrayList<>();
+        ArrayList<String> argvalues = new ArrayList<>();
+
+//        argnames.add("orderId");
+//        argvalues.add(id);
+
+        post("positions", argnames, argvalues, "0");
+    }
+
+    ////
     // cancel single order, clean
     //
     public void cancelOrder(String id) throws NoSuchAlgorithmException {
@@ -147,12 +185,14 @@ public class DeribitWebsocketClient extends WebSocketClient {
     @Override
     public void onMessage(String message) {
 
-//        System.out.println(message);
+        System.out.println(message);
 
         if (message.contains("\"success\":true,\"message\":\"subscribed\"")) {
             System.out.println("successfully connected to deribit websocket");
         } else if (message.contains("trade_event")) {
             tradeMessage(message);
+        } else if (message.contains("estLiqPrice") && message.contains("realizedPl") && message.contains("maintenanceMargin")) {
+            positionMessage(message);
         }
 
 
@@ -160,6 +200,23 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
 
     }
+
+    private void positionMessage(String message) {
+
+        String contracts = message.substring(message.indexOf("\"size\":") + 7, message.indexOf(",\"amount"));
+        String side = message.substring(message.indexOf("direction\":\"") + 12, message.indexOf("\",\"sizeBtc"));
+        String entry = message.substring(message.indexOf("\"averagePrice\":") + 15, message.indexOf(",\"direction"));
+        String liq = message.substring(message.indexOf("\"estLiqPrice\":") + 14, message.indexOf(",\"markPrice"));
+
+        String upnl = message.substring(message.indexOf("\"floatingPl\":") + 13, message.indexOf(",\"realizedPl"));
+
+        String rpnl = message.substring(message.indexOf("realizedPl\":") + 12, message.indexOf(",\"estLiqPr"));
+
+
+        ScaledOrderPanel.updatePosition(side, Double.valueOf(contracts), Double.valueOf(entry), Double.valueOf(liq), Double.valueOf(upnl), Double.valueOf(rpnl));
+
+    }
+
     private void tradeMessage(String message) {
 
         try {

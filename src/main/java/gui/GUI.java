@@ -18,11 +18,19 @@ public class GUI  extends JFrame {
         JPanel mainPanel = new JPanel(new GridBagLayout());
         setContentPane(mainPanel);
 
+
+        JTabbedPane tabs = new JTabbedPane();
+
+        tabs.add("scaled orders", new ScaledOrderPanel(false));
+
         //scaled order panel
         gbc.gridx = 0; gbc.gridy = 0;
         gbc.weightx = 1; gbc.weighty = 1;
         gbc.anchor = GridBagConstraints.NORTHWEST; gbc.fill = GridBagConstraints.NONE;
-        mainPanel.add(new ScaledOrderPanel(false), gbc);
+        mainPanel.add(tabs, gbc);
+
+
+//        tabs.add("limit chase", new JPanel());
 
 
 

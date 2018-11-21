@@ -33,7 +33,7 @@ public class Main {
             JFrame.setDefaultLookAndFeelDecorated(true);
 
             // initial size
-            gui.setSize(800, 500);
+            gui.setSize(380, 760);
 
             // center of screen
             gui.setLocationRelativeTo(null);

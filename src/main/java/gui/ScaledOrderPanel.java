@@ -3,6 +3,7 @@ package gui;
 import data.BidAsk;
 import utils.ScaledOrder;
 import utils.SingleTrade;
+import websocket.DeribitWebsocketClient;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -10,7 +11,11 @@ import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 public class ScaledOrderPanel extends JPanel {
@@ -60,7 +65,7 @@ public class ScaledOrderPanel extends JPanel {
 
         setLayout(new GridBagLayout());
 
-        setBorder(BorderFactory.createTitledBorder("scaled order"));
+//        setBorder(BorderFactory.createTitledBorder("scaled order"));
 
         makePanels();
 
@@ -101,6 +106,8 @@ public class ScaledOrderPanel extends JPanel {
 
         rightPreviewPanel();
 
+//        rightrightCurrentPosition();
+
         // spacers
         JPanel bottomspacer = new JPanel();
         gbc.gridy++;
@@ -116,6 +123,17 @@ public class ScaledOrderPanel extends JPanel {
 
 
         listeners();
+
+    }
+
+    private void rightrightCurrentPosition() {
+
+        JPanel rightrightPanel = new JPanel(new GridBagLayout());
+
+        rightrightPanel.add(new JLabel("rightright"));
+
+        gbc.gridx++;
+        mainPanel.add(rightrightPanel, gbc);
 
     }
 
@@ -184,7 +202,7 @@ public class ScaledOrderPanel extends JPanel {
 
                 try {
                     startButtonPressed();
-                } catch (InterruptedException e1) {
+                } catch (Exception e1) {
                     e1.printStackTrace();
                 }
             }
@@ -219,7 +237,7 @@ public class ScaledOrderPanel extends JPanel {
         });
     }
 
-    private void startButtonPressed() throws InterruptedException {
+    private void startButtonPressed() throws InterruptedException, NoSuchAlgorithmException {
 
 
         ArrayList<SingleTrade> trades = scaledorder.getTrades();
@@ -246,8 +264,16 @@ public class ScaledOrderPanel extends JPanel {
 
             for (SingleTrade trade : trades) {
 
-//                orders.add(new Bitmex.PlaceOrderCommand(GUI.getInstance().getPair(), trade.getSide() == Order.OrderType.BID ? "Buy" : "Sell", trade.getAmt(), trade.getPrice(), null, "Limit", null, "ParticipateDoNotInitiate", null, null));
+                System.out.println("placing order " + trade.getPair() + trade.getSide() + trade.getAmt() + "@ " + trade.getPrice());
+
+                DeribitWebsocketClient.getInstance().limit(trade.getSide().contains("Buy"), trade.getAmt(), trade.getPrice().doubleValue());
+
+
+
             }
+
+//                orders.add(new Bitmex.PlaceOrderCommand(GUI.getInstance().getPair(), trade.getSide() == Order.OrderType.BID ? "Buy" : "Sell", trade.getAmt(), trade.getPrice(), null, "Limit", null, "ParticipateDoNotInitiate", null, null));
+//            }
 
 //            BitmexRest.placeBatch(orders);
 
@@ -302,8 +328,11 @@ public class ScaledOrderPanel extends JPanel {
 
         SwingUtilities.invokeLater(() -> {
 
-            ordersArea.setText(s);
+            try {
+                ordersArea.setText(s);
+            } catch (Exception e) {
 
+            }
 
         });
 
@@ -374,6 +403,13 @@ public class ScaledOrderPanel extends JPanel {
         gbc.gridy = 1;
         gbc.weighty = 1;
         rightPanel.add(ordersScrollpane, BorderLayout.CENTER);
+
+
+
+
+
+
+
 
 
     }
@@ -595,21 +631,160 @@ public class ScaledOrderPanel extends JPanel {
         gbc.weightx = 0;
         leftPanel.add(distributionPanel, gbc);
 
+        JPanel settingsPanel = new JPanel();
+        settingsPanel.setLayout(new BoxLayout(settingsPanel, BoxLayout.Y_AXIS));
+
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridx = 0;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.gridy++;
+        add(settingsPanel, gbc);
+        settingsPanel.setBorder(BorderFactory.createTitledBorder("settings"));
 
         //reduceonly
         JCheckBox reduceOnlyCheckbox = new JCheckBox("reduce-only");
+        reduceOnlyCheckbox.setEnabled(false);
 
-        gbc.gridy++;
-        add(reduceOnlyCheckbox, gbc);
+        gbc.anchor = GridBagConstraints.WEST;
+//        gbc.gridy++;
+        gbc.gridx = 0;
+        settingsPanel.add(reduceOnlyCheckbox, gbc);
 
 
         //retry overload
         JCheckBox retryOnOverload = new JCheckBox("retry on overload");
         retryOnOverload.setSelected(true);
+//        gbc.gridy++;
+       settingsPanel.add(retryOnOverload, gbc);
+
+
+        //hidden
+        JCheckBox hiddenCheck = new JCheckBox("hidden");
+//        gbc.gridy++;
+        settingsPanel.add(hiddenCheck, gbc);
+        hiddenCheck.setEnabled(false);
+
+
+
+
+        JPanel positionPanel = new JPanel(new GridBagLayout());
+        positionPanel.setBorder(BorderFactory.createTitledBorder("current position"));
         gbc.gridy++;
-        add(retryOnOverload, gbc);
+        add(positionPanel, gbc);
+
+        positionLabel = new JLabel(" long 1000  ");
+        positionLabel.setForeground(Color.green);
+        positionLabel.setFont(new Font(Font.SANS_SERIF, 0,20));
+        gbc.gridx = 0;
+
+        gbc.gridy = 0;
+        positionPanel.add(positionLabel, gbc);
+
+
+
+
+
+
+
+        //////buttons here todo:
+
+        JButton button2 = new JButton("close limitchase");
+
+        gbc.gridx++;
+        positionPanel.add(button2, gbc);
+
+        JButton button1 = new JButton("close market");
+
+        gbc.gridx++;
+        positionPanel.add(button1, gbc);
+
+
+
+
+
+
+
+
+        gbc.gridy = 1;
+
+        JPanel infoPanel = new JPanel(new GridBagLayout());
+        infoPanel.setBorder(BorderFactory.createTitledBorder("info"));
+//        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.X_AXIS));
+
+        gbc.gridx = 0;
+        gbc.gridy++;gbc.gridy++;gbc.gridy++;gbc.gridy++;gbc.gridy++;
+
+        add(infoPanel, gbc);
+
+        gbc.insets = new Insets(1,1,3,1);
+        gbc.weightx = 0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.NONE;
+
+        //entry
+        entryLabel = new JLabel(" entry: 5000.5 ");
+        entryLabel.setFont(new Font(Font.SANS_SERIF, 0,16));
+//        gbc.gridx++;
+        infoPanel.add(entryLabel, gbc);
+
+        gbc.gridx++;
+        gbc.weightx = 1;
+        infoPanel.add(new JLabel(), gbc);
+        gbc.gridx--;
+        gbc.weightx = 0;
+
+        //liq
+        liqLabel = new JLabel(" liq: 4900.0 ");
+        liqLabel.setFont(new Font(Font.SANS_SERIF, 0,16));
+        gbc.gridy++;
+        infoPanel.add(liqLabel, gbc);
+
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        //upnl
+        upnlLabel = new JLabel(" upnl: 9.1234 ");
+        upnlLabel.setFont(new Font(Font.SANS_SERIF, 0,16));
+//        gbc.gridx++;
+        infoPanel.add(upnlLabel, gbc);
+
+        //rpnl
+        rpnlLabel = new JLabel(" rpnl: 9.1234 ");
+        rpnlLabel.setFont(new Font(Font.SANS_SERIF, 0,16));
+        gbc.gridy++;
+        infoPanel.add(rpnlLabel, gbc);
 
     }
 
+    static JLabel positionLabel;
 
+    static JLabel entryLabel;
+    static JLabel liqLabel;
+    static JLabel upnlLabel;
+    static JLabel rpnlLabel;
+
+    public static void updatePosition(String side, double pos, double entry, double liq, double upnl, double rpnl) {
+
+
+        if (pos == 0) {
+            positionLabel.setForeground(Color.yellow);
+            positionLabel.setText("flat ");
+        } else if (side.toLowerCase().contains("buy")) {
+            positionLabel.setForeground(Color.green);
+            positionLabel.setText("long " + (int)pos + " ");
+        } else if (side.toLowerCase().contains("sell")) {
+            positionLabel.setForeground(Color.red);
+            positionLabel.setText("short " + (int)pos + " ");
+        }
+
+        entryLabel.setText(" entry: " + BigDecimal.valueOf(entry).setScale(2, RoundingMode.HALF_EVEN));
+        liqLabel.setText(" liq: " + BigDecimal.valueOf(liq).setScale(2, RoundingMode.HALF_EVEN));
+        upnlLabel.setText(" upnl: " + BigDecimal.valueOf(upnl).setScale(4, RoundingMode.HALF_EVEN));
+        rpnlLabel.setText("rpnl: " + BigDecimal.valueOf(rpnl).setScale(4, RoundingMode.HALF_EVEN));
+
+    }
+
+    public void setSideLabel(String a) {
+        positionLabel.setText(a);
+    }
 }
