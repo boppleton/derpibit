@@ -254,11 +254,11 @@ public class ScaledOrderPanel extends JPanel {
 //        System.out.println("starting orders..");
 
 
-        if (bidsButton.isSelected() && t.getPrice().doubleValue() > BidAsk.getBid() || (asksButton.isSelected() && t.getPrice().doubleValue() < BidAsk.getAsk())) {
-
+//        if (bidsButton.isSelected() && t.getPrice().doubleValue() > BidAsk.getBid() || (asksButton.isSelected() && t.getPrice().doubleValue() < BidAsk.getAsk())) {
+//
 //            GUI.getInstance().updateTopToolbarText("!! order would execute immediately");
-
-        } else {
+//
+//        } else {
 
 //            ArrayList<Bitmex.PlaceOrderCommand> orders = new ArrayList<>();
 
@@ -277,7 +277,7 @@ public class ScaledOrderPanel extends JPanel {
 
 //            BitmexRest.placeBatch(orders);
 
-        }
+//        }
 
 
     }
@@ -358,6 +358,12 @@ public class ScaledOrderPanel extends JPanel {
         startButton = new JButton("place orders");
         startButton.setVisible(!buildDialog);
 
+        gbc.insets = new Insets(5,2,5,2);
+
+        startButton.setBackground(Color.CYAN);
+
+        startButton.setPreferredSize(new Dimension(100, 50));
+
         startButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -433,7 +439,7 @@ public class ScaledOrderPanel extends JPanel {
         bidsButton = new JRadioButton("buy");
         bidsButton.setSelected(true);
         buttonsPanel.add(bidsButton);
-        buttonsPanel.add(Box.createHorizontalStrut(40));
+        buttonsPanel.add(Box.createHorizontalGlue());
 
         bidsButton.addActionListener(new ActionListener() {
             @Override
@@ -445,7 +451,7 @@ public class ScaledOrderPanel extends JPanel {
             }
         });
 
-        buttonsPanel.add(Box.createHorizontalStrut(10));
+//        buttonsPanel.add(Box.createHorizontalStrut(10));
 
         asksButton = new JRadioButton("sell");
         buttonsPanel.add(asksButton);
@@ -474,7 +480,7 @@ public class ScaledOrderPanel extends JPanel {
 
         // total contracts
         JPanel totalContractsPanel = new JPanel(new BorderLayout());
-        totalContractsPanel.setBorder(BorderFactory.createTitledBorder("total amount"));
+        totalContractsPanel.setBorder(BorderFactory.createTitledBorder("contracts ($10 each)"));
         totalContractsField = new JSpinner(new SpinnerNumberModel(100, 1, 10000000, 10));
         totalContractsPanel.add(totalContractsField, BorderLayout.CENTER);
         gbc.weightx = 1;
@@ -501,7 +507,7 @@ public class ScaledOrderPanel extends JPanel {
         priceButton.setEnabled(!buildDialog);
         priceButton.setSelected(true);
         priceTypePanel.add(priceButton);
-        priceTypePanel.add(Box.createHorizontalStrut(40));
+        priceTypePanel.add(Box.createHorizontalGlue());
 
 
 
@@ -547,7 +553,8 @@ public class ScaledOrderPanel extends JPanel {
 
 
         gbc.gridy++;
-        gbc.weightx = 0;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
         if (!buildDialog) {
             leftPanel.add(priceTypePanel, gbc);
         }
@@ -772,6 +779,23 @@ public class ScaledOrderPanel extends JPanel {
 
         pricePanel.add(currentBidLabel, gbc);
 
+
+        JButton cancelAllButton = new JButton("cancel all orders");
+
+        cancelAllButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    DeribitWebsocketClient.getInstance().cancelAll();
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
+
+        gbc.gridy++;
+
+        add(cancelAllButton, gbc);
 
     }
 

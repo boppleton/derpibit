@@ -111,6 +111,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
                limitString.append("}, \"sig\":\""
                 + k + "." + nonce + "." + mac + "\"}");
 
+//        System.out.println(limitString.toString());
 
         send(limitString.toString());
 
@@ -131,11 +132,15 @@ public class DeribitWebsocketClient extends WebSocketClient {
         argnames.add("instrument");
         argvalues.add(GUI.getInstance().getPair());
 
+        argnames.add("post_only");
+        argvalues.add("true");
+
         argnames.add("price");
         argvalues.add(String.valueOf((Formatter.getpoint5round(price).doubleValue()%1==0?Formatter.getpoint5round(price).intValue():Formatter.getpoint5round(price))));
 
         argnames.add("quantity");
         argvalues.add(String.valueOf((int)contracts));
+
 
 
         post(buy?"buy":"sell", argnames, argvalues, "0");
