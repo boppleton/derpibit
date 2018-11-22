@@ -14,11 +14,12 @@ import java.awt.event.ActionListener;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.NoSuchAlgorithmException;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 
 public class ScaledOrderPanel extends JPanel {
+
+    private static int currentPosition = 0;
 
     public ScaledOrder getScaledorder() {
         return scaledorder;
@@ -58,6 +59,8 @@ public class ScaledOrderPanel extends JPanel {
     private JSpinner priceGapSpinner;
 
     private boolean buildDialog;
+
+    private static JPanel openOrdersPanel;
 
     public ScaledOrderPanel(boolean buildDialog) {
 
@@ -266,7 +269,7 @@ public class ScaledOrderPanel extends JPanel {
 
                 System.out.println("placing order " + trade.getPair() + trade.getSide() + trade.getAmt() + "@ " + trade.getPrice());
 
-                DeribitWebsocketClient.getInstance().limit(trade.getSide().contains("Buy"), trade.getAmt(), trade.getPrice().doubleValue());
+                DeribitWebsocketClient.getInstance().limit(trade.getSide().contains("Buy"), trade.getAmt(), trade.getPrice().doubleValue(), "limit" + System.currentTimeMillis());
 
 
 
@@ -404,7 +407,7 @@ public class ScaledOrderPanel extends JPanel {
 
         JScrollPane ordersScrollpane = new JScrollPane(ordersArea);
         ordersScrollpane.setPreferredSize(new Dimension(150, 100));
-        ordersScrollpane.setMinimumSize(new Dimension(200, 100));
+        ordersScrollpane.setMinimumSize(new Dimension(150, 100));
 
         gbc.gridy = 1;
         gbc.weighty = 1;
@@ -446,6 +449,8 @@ public class ScaledOrderPanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 buttonsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.green), "side"));
 
+                totalContractsField.setValue(currentPosition);
+
 
                 distributionCombo.setSelectedItem("down");
             }
@@ -461,6 +466,7 @@ public class ScaledOrderPanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 buttonsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.red), "side"));
 
+                totalContractsField.setValue(currentPosition);
 
                 distributionCombo.setSelectedItem("up");
             }
@@ -492,7 +498,7 @@ public class ScaledOrderPanel extends JPanel {
         // # of orders
         JPanel numOrdersPanel = new JPanel(new BorderLayout());
         numOrdersPanel.setBorder(BorderFactory.createTitledBorder("# of orders"));
-        numOrdersSpinner = new JSpinner(new SpinnerNumberModel(10, 1, 200, 10));
+        numOrdersSpinner = new JSpinner(new SpinnerNumberModel(10, 1, 100, 10));
         numOrdersPanel.add(numOrdersSpinner, BorderLayout.CENTER);
         gbc.gridy++;
         leftPanel.add(numOrdersPanel, gbc);
@@ -632,8 +638,8 @@ public class ScaledOrderPanel extends JPanel {
 
         JPanel sliderPane = new JPanel(new GridBagLayout());
 
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
         sliderPane.add(weightSlider, gbc);
 
         gbc.gridy++;
@@ -768,17 +774,61 @@ public class ScaledOrderPanel extends JPanel {
 
 
 
-        JPanel pricePanel = new JPanel(new GridBagLayout());
-        pricePanel.setBorder(BorderFactory.createTitledBorder("price"));
+
+        //
+        // CURENT BID
+        //
+//        JPanel pricePanel = new JPanel(new GridBagLayout());
+//        pricePanel.setBorder(BorderFactory.createTitledBorder("price"));
+//        gbc.gridy++;
+//        add(pricePanel, gbc);
+//
+//
+//        currentBidLabel = new JLabel("current bid: x");
+//        currentBidLabel.setFont(new Font(Font.SANS_SERIF, 0,20));
+//
+//        pricePanel.add(currentBidLabel, gbc);
+
+
+
+
+
+
+        openOrderMainPanel = new JPanel(new BorderLayout());
+        openOrderMainPanel.setPreferredSize(new Dimension(200,300));
+
+        openOrderMainPanel.setBorder(BorderFactory.createTitledBorder("open orders (0)"));
+
+        openOrdersPanel = new JPanel();
+        openOrdersPanel.setLayout(new BoxLayout(openOrdersPanel, BoxLayout.Y_AXIS));
+
+        openOrdersPanel.setPreferredSize(new Dimension(200,300));
+
+        JScrollPane openOrdersScroll = new JScrollPane(openOrdersPanel);
+
+        openOrdersScroll.setPreferredSize(new Dimension(200,300));
+
+        openOrderMainPanel.add(openOrdersScroll, BorderLayout.CENTER);
+
+        gbc.gridx = 0;
         gbc.gridy++;
-        add(pricePanel, gbc);
+        gbc.weightx = 1;
+        gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        add(openOrderMainPanel, gbc);
 
 
-        currentBidLabel = new JLabel("current bid: x");
-        currentBidLabel.setFont(new Font(Font.SANS_SERIF, 0,20));
 
-        pricePanel.add(currentBidLabel, gbc);
 
+
+
+
+
+
+
+
+
+        //cancel all
 
         JButton cancelAllButton = new JButton("cancel all orders");
 
@@ -787,6 +837,8 @@ public class ScaledOrderPanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 try {
                     DeribitWebsocketClient.getInstance().cancelAll();
+
+                    clearOpenOrders();
                 } catch (Exception e1) {
                     e1.printStackTrace();
                 }
@@ -794,8 +846,24 @@ public class ScaledOrderPanel extends JPanel {
         });
 
         gbc.gridy++;
-
         add(cancelAllButton, gbc);
+
+
+    }
+
+    private static JPanel openOrderMainPanel;
+
+    public static void updateOpenOrdersSize(int qty) {
+
+        // anything inside of this will run on the Event Dispatch thread, for the java swing UI
+        SwingUtilities.invokeLater(() -> {
+
+            openOrderMainPanel.setBorder(BorderFactory.createTitledBorder("open orders (" + qty + ")"));
+
+        });
+
+
+
 
     }
 
@@ -803,7 +871,7 @@ public class ScaledOrderPanel extends JPanel {
 
     public static void updateCurrentBid(double bid) {
 
-        currentBidLabel.setText("current bid: " + bid);
+//        currentBidLabel.setText("current bid: " + bid);
 
     }
 
@@ -817,6 +885,8 @@ public class ScaledOrderPanel extends JPanel {
     public static void updatePosition(String side, double pos, double entry, double liq, double upnl, double rpnl) {
 
 //        System.out.println("updating position " + side + pos + " " + entry);
+
+        currentPosition = (int) pos;
 
         if (pos == 0) {
             positionLabel.setForeground(Color.yellow);
@@ -838,5 +908,53 @@ public class ScaledOrderPanel extends JPanel {
 
     public void setSideLabel(String a) {
         positionLabel.setText(a);
+    }
+
+    public static void clearOpenOrders() {
+
+        // anything inside of this will run on the Event Dispatch thread, for the java swing UI
+        SwingUtilities.invokeLater(() -> {
+
+            openOrdersPanel.removeAll();
+
+        });
+
+
+
+    }
+
+    private static String currentOpenOrdersHash = "";
+
+    public static void addToOpenOrders(ArrayList<String> orders) {
+
+//        System.out.println("currenthash: " + currentOpenOrdersHash + " ordershash: " + orders.hashCode());
+
+        if (!currentOpenOrdersHash.contains("" + orders.hashCode())) {
+
+            currentOpenOrdersHash = "" + orders.hashCode();
+
+            clearOpenOrders();
+
+            // anything inside of this will run on the Event Dispatch thread, for the java swing UI
+            SwingUtilities.invokeLater(() -> {
+
+
+
+                for (String order : orders) {
+
+                    System.out.println("addddding order " + order);
+
+                    openOrdersPanel.add(new JLabel(order));
+                }
+
+            });
+
+//            System.out.println("new hashcode: " + orders.hashCode());
+
+
+
+        }
+
+
     }
 }

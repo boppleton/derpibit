@@ -32,7 +32,7 @@ public class GUI  extends JFrame {
         mainPanel.add(tabs, gbc);
 
 
-//        tabs.add("limit chase", new JPanel());
+        tabs.add("limit chase", new LimitChasePanel());
 
 
 
