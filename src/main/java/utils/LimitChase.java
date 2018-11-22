@@ -14,7 +14,38 @@ public class LimitChase {
 
     private long placedId = -1;
 
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+
+    }
+
+    public long getPlacedId() {
+        return placedId;
+    }
+
+    private int size;
+
+    private boolean buy;
+
+    public int getSize() {
+        return size;
+    }
+
+    public boolean isBuy() {
+        return buy;
+    }
+
     public LimitChase(double size, boolean buy) throws InterruptedException {
+
+        this.size = (int) size;
+
+        this.buy = buy;
+
+
 
         active = true;
 
@@ -43,13 +74,13 @@ public class LimitChase {
 
             placedId = DeribitWebsocketClient.getInstance().getLastOrderEventID();
 
-        System.out.println("placedId: " + placedId);
+//        System.out.println("placedId: " + placedId);
 
         Thread tloop = new Thread(() -> {
 
             while (active) {
 
-                System.out.println("chaseloop");
+//                System.out.println("chaseloop");
 
                 try {
                     Thread.sleep(2000);
@@ -57,7 +88,15 @@ public class LimitChase {
                     e.printStackTrace();
                 }
 
-                System.out.println("update " + placedId);
+//                System.out.println("get orderstate " + placedId);
+
+                try {
+                    DeribitWebsocketClient.getInstance().orderState(String.valueOf(placedId));
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                }
+
+//                System.out.println("update " + placedId);
 
                 try {
                     DeribitWebsocketClient.getInstance().ammend(String.valueOf(placedId), size, buy?BidAsk.getBid()+90:1);
@@ -76,4 +115,9 @@ public class LimitChase {
 
     }
 
+    public void closeOut() throws NoSuchAlgorithmException {
+
+        DeribitWebsocketClient.getInstance().cancelOrder(String.valueOf(placedId));
+
+    }
 }

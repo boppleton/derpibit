@@ -6,6 +6,8 @@ import gui.ScaledOrderPanel;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import utils.Formatter;
+import utils.LimitChase;
+import utils.LimitChaseContainer;
 import utils.Lines;
 
 
@@ -20,9 +22,13 @@ import java.util.*;
 
 public class DeribitWebsocketClient extends WebSocketClient {
 
+    private int currentPosition = 0;
+    private boolean currentSide;
+
+
     private static DeribitWebsocketClient instance;
 
-    private String k,s = null;
+    private String k, s = null;
 
     private String lastSentMessageType = "";
 
@@ -58,14 +64,13 @@ public class DeribitWebsocketClient extends WebSocketClient {
 //        cancelAll();
 
 
-
     }
 
     private void startPositionsThread() {
 
-        Thread t = new Thread(()->{
+        Thread t = new Thread(() -> {
 
-            for (;;) {
+            for (; ; ) {
 
 //                System.out.println("position check");
 
@@ -109,9 +114,9 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
         StringBuilder sig = new StringBuilder(
                 "_=" + nonce + "&" +
-                "_ackey=" + k + "&" +
-                "_acsec=" + s + "&" +
-                "_action=" + "/api/v1/private/" + type);
+                        "_ackey=" + k + "&" +
+                        "_acsec=" + s + "&" +
+                        "_action=" + "/api/v1/private/" + type);
 
         for (int i = 0; i < argnames.size(); i++) {
             sig.append("&" + argnames.get(i) + "=" + argvalues.get(i));
@@ -126,10 +131,10 @@ public class DeribitWebsocketClient extends WebSocketClient {
             if (i > 0) {
                 limitString.append(",");
             }
-            limitString.append("\"" + argnames.get(i) + "\":" + (stringIndices.contains(String.valueOf(i))?"\"":"") + argvalues.get(i) + (stringIndices.contains(String.valueOf(i))?"\"":"") );
+            limitString.append("\"" + argnames.get(i) + "\":" + (stringIndices.contains(String.valueOf(i)) ? "\"" : "") + argvalues.get(i) + (stringIndices.contains(String.valueOf(i)) ? "\"" : ""));
         }
 
-               limitString.append("}, \"sig\":\""
+        limitString.append("}, \"sig\":\""
                 + k + "." + nonce + "." + mac + "\"}");
 
 //        System.out.println(limitString.toString());
@@ -156,11 +161,10 @@ public class DeribitWebsocketClient extends WebSocketClient {
         argvalues.add("true");
 
         argnames.add("price");
-        argvalues.add(Double.valueOf(String.valueOf((Formatter.getpoint5round(price).doubleValue()%1==0?Formatter.getpoint5round(price).intValue():Formatter.getpoint5round(price)))).toString());
+        argvalues.add(Double.valueOf(String.valueOf((Formatter.getpoint5round(price).doubleValue() % 1 == 0 ? Formatter.getpoint5round(price).intValue() : Formatter.getpoint5round(price)))).toString());
 
         argnames.add("quantity");
-        argvalues.add(String.valueOf((int)contracts));
-
+        argvalues.add(String.valueOf((int) contracts));
 
 
         post("edit", argnames, argvalues, "0");
@@ -169,6 +173,19 @@ public class DeribitWebsocketClient extends WebSocketClient {
     }
 
 
+    ////
+    // cancel single order, clean
+    //
+    public void orderState(String id) throws NoSuchAlgorithmException {
+
+        ArrayList<String> argnames = new ArrayList<>();
+        ArrayList<String> argvalues = new ArrayList<>();
+
+        argnames.add("orderId");
+        argvalues.add(id);
+
+        post("orderstate", argnames, argvalues, "0");
+    }
 
 
     ////
@@ -186,13 +203,13 @@ public class DeribitWebsocketClient extends WebSocketClient {
         argvalues.add("true");
 
         argnames.add("price");
-        argvalues.add(String.valueOf((Formatter.getpoint5round(price).doubleValue()%1==0?Formatter.getpoint5round(price).intValue():Formatter.getpoint5round(price))));
+        argvalues.add(String.valueOf((Formatter.getpoint5round(price).doubleValue() % 1 == 0 ? Formatter.getpoint5round(price).intValue() : Formatter.getpoint5round(price))));
 
         argnames.add("quantity");
-        argvalues.add(String.valueOf((int)contracts));
+        argvalues.add(String.valueOf((int) contracts));
 
 
-        post(buy?"buy":"sell", argnames, argvalues, "0");
+        post(buy ? "buy" : "sell", argnames, argvalues, "0");
 
 
     }
@@ -242,6 +259,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
         post("cancel", argnames, argvalues, "0");
     }
+
     ////
     //  cancel all, clean
     ///
@@ -258,7 +276,6 @@ public class DeribitWebsocketClient extends WebSocketClient {
     }
 
 
-
     ////// ws messages
     @Override
     public void onMessage(String message) {
@@ -271,7 +288,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
             tradeMessage(message);
         } else if (message.contains("estLiqPrice") && message.contains("realizedPl") && message.contains("maintenanceMargin")) {
             positionMessage(message);
-        } else if (!message.contains("commission") && message.contains("\"type\"") && message.contains("\"orderId\"") && message.contains("\"label\"") && message.contains("\"filledQuantity\"")&& message.contains("\"created\"")) {
+        } else if (!message.contains("commission") && message.contains("\"type\"") && message.contains("\"orderId\"") && message.contains("\"label\"") && message.contains("\"filledQuantity\"") && message.contains("\"created\"")) {
             getOpenOrdersMessage(message);
 
         } else if (message.contains("\"result\":[]")) {
@@ -293,9 +310,6 @@ public class DeribitWebsocketClient extends WebSocketClient {
         }
 
 
-
-
-
     }
 
     private static long lastOrderEventID = 0;
@@ -310,6 +324,19 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
         String id = message.substring(message.indexOf("orderId\":") + 9, message.indexOf(",\"type"));
 
+        String state = message.substring(message.indexOf("state\":\"") + 8, message.indexOf("\",\"post"));
+
+        System.out.println("id: " + id + " state: " + state);
+
+        for (LimitChase chase : LimitChaseContainer.getSingleChaseList()) {
+            if (String.valueOf(chase.getPlacedId()).contains(id) && chase.isActive() && state.contains("filled")) {
+
+                chase.setActive(false);
+
+                LimitChaseContainer.removeChaseSingle(chase);
+
+            }
+        }
 
         lastOrderEventID = Long.parseLong(id.trim());
 
@@ -330,31 +357,49 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
             if (!s.contains("\"result\":[")) {
 
-                System.out.println("order: " + s);
+//                System.out.println("order: " + s);
+
+                String id = "";
+
+                String contracts = "";
+                String side = "";
+                String price = "";
+
+                String filledAmt = "";
+
+                String state = "";
 
 
-            String contracts = "";
-            String side = "";
-            String price = "";
+                try {
 
-            String filledAmt = "";
+                    System.out.println("try id..");
+                    System.out.println(s.substring(1, s.indexOf(",\"type\":\"limit\",\"instrument\"")));
 
+                    id = s.substring(1, s.indexOf(",\"type\":\"limit\",\"instrument\""));
 
-            try {
+                    contracts = s.substring(s.indexOf("\"quantity\":") + 11, s.indexOf(",\"filledQuantity"));
+                    side = s.substring(s.indexOf("direction\":\"") + 12, s.indexOf("\",\"price"));
+                    price = s.substring(s.indexOf("\"price\":") + 8, s.indexOf(",\"label\""));
+                    filledAmt = s.substring(s.indexOf("\"filledQuantity\":") + 17, s.indexOf(",\"filledAmount\""));
 
-                contracts = s.substring(s.indexOf("\"quantity\":") + 11, s.indexOf(",\"filledQuantity"));
-                side = s.substring(s.indexOf("direction\":\"") + 12, s.indexOf("\",\"price"));
-                price = s.substring(s.indexOf("\"price\":") + 8, s.indexOf(",\"label\""));
-                filledAmt = s.substring(s.indexOf("\"filledQuantity\":") + 17, s.indexOf(",\"filledAmount\""));
+                    state = s.substring(s.indexOf("\"state\":\"") + 9, s.indexOf("\",\"created"));
 
-                System.out.println("this price: " + price);
+//                    System.out.println("order id: " + id + " state: " + state);
 
-            } catch (Exception e) {
-            }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
-            System.out.println("adding " + side + " " + contracts + " @ " + price + " - " + (Integer.parseInt(filledAmt) != 0 ? Integer.parseInt(contracts)/Integer.parseInt(filledAmt) : 0)  + "% filled ");
+                for (LimitChase chase : LimitChaseContainer.getSingleChaseList()) {
+                    if (chase.getPlacedId() == Long.parseLong(id) && chase.isActive() && state.contains("filled")) {
+                        chase.setActive(false);
+                        LimitChaseContainer.removeChaseSingle(chase);
+                    }
+                }
 
-            ordersStrings.add(side + " " + contracts + " @ " + price + " - " + (Integer.parseInt(filledAmt) != 0 ? Integer.parseInt(contracts)/Integer.parseInt(filledAmt) : 0)  + "% filled " );
+//            System.out.println("adding " + side + " " + contracts + " @ " + price + " - " + (Integer.parseInt(filledAmt) != 0 ? Integer.parseInt(contracts)/Integer.parseInt(filledAmt) : 0)  + "% filled ");
+
+                ordersStrings.add(side + " " + contracts + " @ " + price + " - " + (Integer.parseInt(filledAmt) != 0 ? Integer.parseInt(contracts) / Integer.parseInt(filledAmt) : 0) + "% filled ");
 
             }
         }
@@ -364,6 +409,8 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
     private void positionMessage(String message) {
 
+        System.out.println(message);
+
         String contracts = "";
         String side = "";
         String entry = "";
@@ -371,6 +418,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
         String upnl = "";
         String rpnl = "";
 
+        String markPrice = "";
 
         try {
 
@@ -382,7 +430,16 @@ public class DeribitWebsocketClient extends WebSocketClient {
             upnl = message.substring(message.indexOf("\"floatingPl\":") + 13, message.indexOf(",\"realizedPl"));
             rpnl = message.substring(message.indexOf("realizedPl\":") + 12, message.indexOf(",\"estLiqPr"));
 
+
+            markPrice = message.substring(message.indexOf("\"markPrice\":") + 12, message.indexOf(",\"indexPrice"));
+
+            System.out.println("mark: " + markPrice);
+
+            BidAsk.setBid(Double.valueOf(markPrice));
+
         } catch (Exception e) {
+
+//            e.printStackTrace();
 
         }
 
@@ -391,9 +448,12 @@ public class DeribitWebsocketClient extends WebSocketClient {
         if (!message.contains("\"result\":[]")) {
             ScaledOrderPanel.updatePosition(side, Double.valueOf(contracts), Double.valueOf(entry), Double.valueOf(liq), Double.valueOf(upnl), Double.valueOf(rpnl));
 
+            currentPosition = Integer.valueOf(contracts);
+
+            currentSide = side.contains("buy");
         } else {
 //            System.out.println("setting 0 position");
-            ScaledOrderPanel.updatePosition("flat", 0, 0, 0,0,0);
+            ScaledOrderPanel.updatePosition("flat", 0, 0, 0, 0, 0);
         }
     }
 
@@ -411,7 +471,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
                     s = s.substring(0, 150);
 
-                    System.out.println("trade: " + s);
+//                    System.out.println("trade: " + s);
 
                     String contracts = "";
                     String side = "";
@@ -424,12 +484,12 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
                         price = s.substring(s.indexOf(",\"price\":", 0) + 9, s.indexOf(",\"direction", 0));
 
-                        System.out.println("pr: " + price);
-                    } catch ( Exception e) {
+//                        System.out.println("pr: " + price);
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
 
-                System.out.println("[" + side + "] contracts[" + contracts + "] price[" + price + "]");
+//                System.out.println("[" + side + "] contracts[" + contracts + "] price[" + price + "]");
 
                     if (side.contains("bid")) {
                         BidAsk.setAsk(Double.valueOf(price));
@@ -439,15 +499,13 @@ public class DeribitWebsocketClient extends WebSocketClient {
                         BidAsk.setAsk(Double.valueOf(price) + 0.5);
                     }
 
-                    System.out.println("trade price: " + price);
+//                    System.out.println("trade price: " + price);
 
                     ScaledOrderPanel.updateCurrentBid(Double.valueOf(price));
                 }
             }
 
 //            System.out.println("new bidask: " + BidAsk.getBid() + "/" + BidAsk.getAsk());
-
-
 
 
         } catch (Exception e) {
@@ -474,7 +532,6 @@ public class DeribitWebsocketClient extends WebSocketClient {
     }
 
 
-
     //extras
     @Override
     public void onOpen(ServerHandshake handshakedata) {
@@ -482,10 +539,14 @@ public class DeribitWebsocketClient extends WebSocketClient {
         System.out.println("open");
 
     }
+
     @Override
-    public void onClose(int code, String reason, boolean remote) { }
+    public void onClose(int code, String reason, boolean remote) {
+    }
+
     @Override
-    public void onError(Exception ex) { }
+    public void onError(Exception ex) {
+    }
 
     public static DeribitWebsocketClient getInstance() {
         return instance;
@@ -496,4 +557,14 @@ public class DeribitWebsocketClient extends WebSocketClient {
                 Base64.getEncoder().encode(MessageDigest.getInstance("SHA-256").digest(clearText.getBytes(StandardCharsets.UTF_8))));
     }
 
+    public void closeSomeOfPosition(int value) throws InterruptedException {
+
+        System.out.println("current pos: " + currentPosition);
+
+        System.out.println("close " + value + "%: " + (Math.abs(currentPosition)*value)/100);
+
+        int closeAmt = (Math.abs(currentPosition)*value)/100;
+
+        LimitChaseContainer.addChaseSingle(new LimitChase(closeAmt, currentPosition<0));
+    }
 }

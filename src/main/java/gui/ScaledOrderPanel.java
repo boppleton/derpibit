@@ -714,11 +714,35 @@ public class ScaledOrderPanel extends JPanel {
         positionPanel.add(button1, gbc);
 
 
+        JSpinner closePercentSpinnter = new JSpinner(new SpinnerNumberModel(50,1,100,1));
+
+        gbc.gridx++;
+        positionPanel.add(closePercentSpinnter, gbc);
+
+
+        JLabel percentLabel = new JLabel(" %");
+        gbc.gridx++;
+        positionPanel.add(percentLabel, gbc);
+
         gbc.gridx++;
         gbc.weightx = 1;
         positionPanel.add(new JLabel(), gbc);
 
 
+
+        button1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("close " + closePercentSpinnter.getValue().toString() + " %");
+
+                try {
+                    DeribitWebsocketClient.getInstance().closeSomeOfPosition((int)closePercentSpinnter.getValue());
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+
+            }
+        });
 
 
 

@@ -7,6 +7,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class LimitChasePanel extends JPanel {
 
@@ -34,14 +37,122 @@ public class LimitChasePanel extends JPanel {
         sidePanel();
 //        previewPanel();
 
+
+
         //spacers
         gbc.gridy++;
         gbc.weighty = 1;
-        add(new JLabel("spacer"), gbc);
+        add(new JLabel("spacerrr"), gbc);
 
 
 
 
+        activeChasePanel = new JPanel();
+        activeChasePanel.setLayout(new BoxLayout(activeChasePanel, BoxLayout.Y_AXIS));
+        activeChasePanel.setBorder(BorderFactory.createTitledBorder("active chases"));
+
+        activeChasePanel.add(new JLabel("chase ojfepofeaf"));
+
+        gbc.gridy++;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        add(activeChasePanel, gbc);
+
+        activeChaseLoop();
+
+
+    }
+
+    private JPanel activeChasePanel;
+
+    private void activeChaseLoop() {
+
+        Thread chasethread = new Thread(()->{
+
+            for (;;) {
+
+                System.out.println("chasethread..");
+
+                activeChasePanel.removeAll();
+
+                try {
+
+                    try {
+                        Thread.sleep(1500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+
+                    // anything inside of this will run on the Event Dispatch thread, for the java swing UI
+                    SwingUtilities.invokeLater(() -> {
+
+//                    System.out.println("chase stuff..");
+
+                        ArrayList<LimitChase> chases = LimitChaseContainer.getSingleChaseList();
+
+                        if (chases.size() > 0) {
+
+                            System.out.println("removeAll chases..");
+
+//                            activeChasePanel.removeAll();
+
+                            for (int i = 0; i < chases.size(); i++) {
+
+
+                                LimitChase chase = chases.get(i);
+
+                                System.out.println("adding chase " + chase.getSize() + chase.isActive());
+
+                                JPanel singleChasePanel = new JPanel();
+                                singleChasePanel.setLayout(new BoxLayout(singleChasePanel, BoxLayout.X_AXIS));
+
+
+                                JLabel startLabel = new JLabel((chase.isBuy() ? "buy " : "sell ") + chase.getSize());
+                                startLabel.setFont(new Font(Font.SANS_SERIF, 0, 18));
+                                startLabel.setForeground(chase.isBuy() ? Color.green : Color.red);
+                                singleChasePanel.add(startLabel);
+
+                                singleChasePanel.add(Box.createHorizontalStrut(9));
+
+                                JButton stopButton = new JButton("stop");
+                                singleChasePanel.add(stopButton);
+
+                                stopButton.addActionListener(new ActionListener() {
+                                    @Override
+                                    public void actionPerformed(ActionEvent e) {
+
+                                        System.out.println("stopping chase");
+
+                                        try {
+                                            chase.closeOut();
+                                        } catch (Exception e1) {
+                                            e1.printStackTrace();
+                                        }
+                                        chase.setActive(false);
+                                        LimitChaseContainer.removeChaseSingle(chase);
+                                    }
+                                });
+
+
+                                System.out.println("adding chase");
+
+                                activeChasePanel.add(singleChasePanel);
+
+                            }
+
+                        }
+
+                    });
+
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+        });
+        chasethread.start();
     }
 
     private void startButtonPanel() {
