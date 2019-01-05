@@ -17,7 +17,7 @@ public class Main {
 
 
 
-        System.out.println("[ derpibit v1.21 ]");
+        System.out.println("[ derpibit v1.41 ]");
 
         gui = new GUI();
 
