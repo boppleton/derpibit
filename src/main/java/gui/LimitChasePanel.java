@@ -70,7 +70,7 @@ public class LimitChasePanel extends JPanel {
 
             for (;;) {
 
-                System.out.println("chasethread..");
+//                System.out.println("chasethread..");
 
                 activeChasePanel.removeAll();
 
@@ -92,7 +92,7 @@ public class LimitChasePanel extends JPanel {
 
                         if (chases.size() > 0) {
 
-                            System.out.println("removeAll chases..");
+//                            System.out.println("removeAll chases..");
 
 //                            activeChasePanel.removeAll();
 
@@ -101,7 +101,7 @@ public class LimitChasePanel extends JPanel {
 
                                 LimitChase chase = chases.get(i);
 
-                                System.out.println("adding chase " + chase.getSize() + chase.isActive());
+//                                System.out.println("adding chase " + chase.getSize() + chase.isActive());
 
                                 JPanel singleChasePanel = new JPanel();
                                 singleChasePanel.setLayout(new BoxLayout(singleChasePanel, BoxLayout.X_AXIS));
@@ -134,7 +134,7 @@ public class LimitChasePanel extends JPanel {
                                 });
 
 
-                                System.out.println("adding chase");
+//                                System.out.println("adding chase");
 
                                 activeChasePanel.add(singleChasePanel);
 

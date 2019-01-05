@@ -50,11 +50,13 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
         startPositionsThread();
 
+        getIndex();
+
 //        getOpenOrders();
 
 //        limit(true, 1, 2000, "");
 //
-        Thread.sleep(5000);
+//        Thread.sleep(5000);
 //
 //        System.out.println("--------trying to ammend ");
 //
@@ -108,7 +110,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
     ////
     //   main post-er, maybe cleanup a bit?
     ///
-    private void post(String type, ArrayList<String> argnames, ArrayList<String> argvalues, String stringIndices) throws NoSuchAlgorithmException {
+    private void post(String type, ArrayList<String> argnames, ArrayList<String> argvalues, String stringIndices, boolean publicc) throws NoSuchAlgorithmException {
 
         long nonce = System.currentTimeMillis();
 
@@ -116,7 +118,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
                 "_=" + nonce + "&" +
                         "_ackey=" + k + "&" +
                         "_acsec=" + s + "&" +
-                        "_action=" + "/api/v1/private/" + type);
+                        "_action=" + "/api/v1/" + (publicc?"public":"private") + "/" + type);
 
         for (int i = 0; i < argnames.size(); i++) {
             sig.append("&" + argnames.get(i) + "=" + argvalues.get(i));
@@ -124,7 +126,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
         String mac = encode(sig.toString());
 
-        StringBuilder limitString = new StringBuilder("{\"action\": \"/api/v1/private/" + type + "\", \"arguments\": " +
+        StringBuilder limitString = new StringBuilder("{\"action\": \"/api/v1/" + (publicc?"public":"private") + "/" + type + "\", \"arguments\": " +
                 "{");
 
         for (int i = 0; i < argnames.size(); i++) {
@@ -149,7 +151,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
     ///
     public void ammend(String id, double contracts, double price) throws NoSuchAlgorithmException {
 
-        System.out.println("ammending " + id + ", " + contracts + ", " + price);
+//        System.out.println("ammending " + id + ", " + contracts + ", " + price);
 
         ArrayList<String> argnames = new ArrayList<>();
         ArrayList<String> argvalues = new ArrayList<>();
@@ -167,9 +169,21 @@ public class DeribitWebsocketClient extends WebSocketClient {
         argvalues.add(String.valueOf((int) contracts));
 
 
-        post("edit", argnames, argvalues, "0");
+        post("edit", argnames, argvalues, "0", false);
 
 
+    }
+
+    ////
+    // get index
+    //
+    public void getIndex() throws NoSuchAlgorithmException {
+
+        ArrayList<String> argnames = new ArrayList<>();
+        ArrayList<String> argvalues = new ArrayList<>();
+
+
+        post("index", argnames, argvalues, "0", true);
     }
 
 
@@ -184,7 +198,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
         argnames.add("orderId");
         argvalues.add(id);
 
-        post("orderstate", argnames, argvalues, "0");
+        post("orderstate", argnames, argvalues, "0", false);
     }
 
 
@@ -209,7 +223,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
         argvalues.add(String.valueOf((int) contracts));
 
 
-        post(buy ? "buy" : "sell", argnames, argvalues, "0");
+        post(buy ? "buy" : "sell", argnames, argvalues, "0", false);
 
 
     }
@@ -227,7 +241,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
         lastSentMessageType = "getopenorders";
 
-        post("getopenorders", argnames, argvalues, "0");
+        post("getopenorders", argnames, argvalues, "0", false);
     }
 
     ////
@@ -243,7 +257,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
         lastSentMessageType = "positions";
 
-        post("positions", argnames, argvalues, "0");
+        post("positions", argnames, argvalues, "0", false);
     }
 
     ////
@@ -257,7 +271,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
         argnames.add("orderId");
         argvalues.add(id);
 
-        post("cancel", argnames, argvalues, "0");
+        post("cancel", argnames, argvalues, "0", false);
     }
 
     ////
@@ -271,7 +285,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
         argnames.add("instrument");
         argvalues.add(GUI.getInstance().getPair());
 
-        post("cancelall", argnames, argvalues, "0");
+        post("cancelall", argnames, argvalues, "0", false);
 
     }
 
@@ -307,8 +321,23 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
             orderEventMessage(message);
 
+        } else if (message.contains("result\":{\"btc\"")) {
+            indexMessage(message);
         }
 
+
+    }
+
+    private void indexMessage(String message) {
+
+        String indexPrice = message.substring(message.indexOf("btc\":") + 5, message.indexOf(",\"edp\""));
+
+        double price = Double.parseDouble(indexPrice);
+
+        BidAsk.setBid(price);
+        BidAsk.setAsk(price);
+
+        ScaledOrderPanel.updatePriceSpinners(price-10, price-100);
 
     }
 
@@ -320,13 +349,13 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
     private void orderEventMessage(String message) {
 
-        System.out.println("order event " + message);
+//        System.out.println("order event " + message);
 
         String id = message.substring(message.indexOf("orderId\":") + 9, message.indexOf(",\"type"));
 
         String state = message.substring(message.indexOf("state\":\"") + 8, message.indexOf("\",\"post"));
 
-        System.out.println("id: " + id + " state: " + state);
+//        System.out.println("id: " + id + " state: " + state);
 
         for (LimitChase chase : LimitChaseContainer.getSingleChaseList()) {
             if (String.valueOf(chase.getPlacedId()).contains(id) && chase.isActive() && state.contains("filled")) {
@@ -340,7 +369,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
         lastOrderEventID = Long.parseLong(id.trim());
 
-        System.out.println("lasteventid: " + lastOrderEventID);
+//        System.out.println("lasteventid: " + lastOrderEventID);
 
 
     }
@@ -372,8 +401,8 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
                 try {
 
-                    System.out.println("try id..");
-                    System.out.println(s.substring(1, s.indexOf(",\"type\":\"limit\",\"instrument\"")));
+//                    System.out.println("try id..");
+//                    System.out.println(s.substring(1, s.indexOf(",\"type\":\"limit\",\"instrument\"")));
 
                     id = s.substring(1, s.indexOf(",\"type\":\"limit\",\"instrument\""));
 
@@ -387,7 +416,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
 //                    System.out.println("order id: " + id + " state: " + state);
 
                 } catch (Exception e) {
-                    e.printStackTrace();
+//                    e.printStackTrace();
                 }
 
                 for (LimitChase chase : LimitChaseContainer.getSingleChaseList()) {
@@ -409,7 +438,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
     private void positionMessage(String message) {
 
-        System.out.println(message);
+//        System.out.println(message);
 
         String contracts = "";
         String side = "";
@@ -427,15 +456,8 @@ public class DeribitWebsocketClient extends WebSocketClient {
             entry = message.substring(message.indexOf("\"averagePrice\":") + 15, message.indexOf(",\"direction"));
             liq = message.substring(message.indexOf("\"estLiqPrice\":") + 14, message.indexOf(",\"markPrice"));
 
-            upnl = message.substring(message.indexOf("\"floatingPl\":") + 13, message.indexOf(",\"realizedPl"));
+            upnl = message.substring(message.indexOf("\"profitLoss\":") + 13, message.indexOf("}],\"message\""));
             rpnl = message.substring(message.indexOf("realizedPl\":") + 12, message.indexOf(",\"estLiqPr"));
-
-
-            markPrice = message.substring(message.indexOf("\"markPrice\":") + 12, message.indexOf(",\"indexPrice"));
-
-            System.out.println("mark: " + markPrice);
-
-            BidAsk.setBid(Double.valueOf(markPrice));
 
         } catch (Exception e) {
 
@@ -447,6 +469,8 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
         if (!message.contains("\"result\":[]")) {
             ScaledOrderPanel.updatePosition(side, Double.valueOf(contracts), Double.valueOf(entry), Double.valueOf(liq), Double.valueOf(upnl), Double.valueOf(rpnl));
+
+//            System.out.println("current position: " + Integer.valueOf(contracts));
 
             currentPosition = Integer.valueOf(contracts);
 
@@ -527,6 +551,8 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
         String mac = encode(sig);
 
+//        System.out.println("sending " + "{\"action\": \"/api/v1/private/subscribe\", \"arguments\": {\"event\": [\"trade\",\"my_trade\",\"user_order\"],\"instrument\": [\"BTC-PERPETUAL\"]}, \"sig\":\"" + k + "." + nonce + "." + mac + "\" }");
+
         send("{\"action\": \"/api/v1/private/subscribe\", \"arguments\": {\"event\": [\"trade\",\"my_trade\",\"user_order\"],\"instrument\": [\"BTC-PERPETUAL\"]}, \"sig\":\"" + k + "." + nonce + "." + mac + "\" }");
 
     }
@@ -559,9 +585,9 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
     public void closeSomeOfPosition(int value) throws InterruptedException {
 
-        System.out.println("current pos: " + currentPosition);
+//        System.out.println("current pos: " + currentPosition);
 
-        System.out.println("close " + value + "%: " + (Math.abs(currentPosition)*value)/100);
+//        System.out.println("close " + value + "%: " + (Math.abs(currentPosition)*value)/100);
 
         int closeAmt = (Math.abs(currentPosition)*value)/100;
 

@@ -36,8 +36,8 @@ public class ScaledOrderPanel extends JPanel {
     private JRadioButton asksButton;
     private JSpinner totalContractsField;
     private JSpinner numOrdersSpinner;
-    private JSpinner upperPriceSpinner;
-    private JSpinner lowerPriceSpinner;
+    private static JSpinner upperPriceSpinner;
+    private static JSpinner lowerPriceSpinner;
     private JComboBox<String> distributionCombo;
     private JSlider weightSlider;
 
@@ -423,6 +423,12 @@ public class ScaledOrderPanel extends JPanel {
 
     }
 
+    public static void updatePriceSpinners(double upper, double lower) {
+
+        upperPriceSpinner.setValue((int)upper);
+        lowerPriceSpinner.setValue((int)lower);
+    }
+
     private void leftBuildPanel() {
 
         JPanel leftPanel = new JPanel();
@@ -444,13 +450,17 @@ public class ScaledOrderPanel extends JPanel {
         buttonsPanel.add(bidsButton);
         buttonsPanel.add(Box.createHorizontalGlue());
 
+
+
         bidsButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 buttonsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.green), "side"));
 
-                totalContractsField.setValue(currentPosition);
+                totalContractsField.setValue(Math.abs(currentPosition));
 
+                upperPriceSpinner.setValue((int)BidAsk.getBid()-10);
+                lowerPriceSpinner.setValue((int)BidAsk.getBid()-100);
 
                 distributionCombo.setSelectedItem("down");
             }
@@ -466,7 +476,10 @@ public class ScaledOrderPanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 buttonsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.red), "side"));
 
-                totalContractsField.setValue(currentPosition);
+                totalContractsField.setValue(Math.abs(currentPosition));
+
+                upperPriceSpinner.setValue((int)BidAsk.getAsk()+100);
+                lowerPriceSpinner.setValue((int)BidAsk.getAsk()+10);
 
                 distributionCombo.setSelectedItem("up");
             }
@@ -794,7 +807,7 @@ public class ScaledOrderPanel extends JPanel {
         rpnlLabel = new JLabel(" rpnl: 9.1234 ");
         rpnlLabel.setFont(new Font(Font.SANS_SERIF, 0,16));
         gbc.gridy++;
-        infoPanel.add(rpnlLabel, gbc);
+//        infoPanel.add(rpnlLabel, gbc);
 
 
 
@@ -910,6 +923,8 @@ public class ScaledOrderPanel extends JPanel {
 
 //        System.out.println("updating position " + side + pos + " " + entry);
 
+
+
         currentPosition = (int) pos;
 
         if (pos == 0) {
@@ -925,7 +940,7 @@ public class ScaledOrderPanel extends JPanel {
 
         entryLabel.setText(" entry: " + BigDecimal.valueOf(entry).setScale(2, RoundingMode.HALF_EVEN));
         liqLabel.setText(" liq: " + BigDecimal.valueOf(liq).setScale(2, RoundingMode.HALF_EVEN));
-        upnlLabel.setText(" upnl: " + BigDecimal.valueOf(upnl).setScale(4, RoundingMode.HALF_EVEN));
+        upnlLabel.setText(" pnl: " + BigDecimal.valueOf(upnl).setScale(4, RoundingMode.HALF_EVEN));
         rpnlLabel.setText(" rpnl: " + BigDecimal.valueOf(rpnl).setScale(4, RoundingMode.HALF_EVEN));
 
     }

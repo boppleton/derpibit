@@ -55,9 +55,9 @@ public class LimitChase {
         Thread t = new Thread(()->{
 
 
-        System.out.println("start limitchase " + buy + " " + size);
+//        System.out.println("start limitchase " + buy + " " + size);
 
-        System.out.println("bid: " + BidAsk.getBid());
+//        System.out.println("bid: " + BidAsk.getBid());
 
         try {
             DeribitWebsocketClient.getInstance().limit(buy, size, buy?BidAsk.getBid()+30:1, label);
@@ -65,9 +65,9 @@ public class LimitChase {
             e.printStackTrace();
         }
 
-        System.out.println("sleep 2s to wait for limitchase initial id");
+//        System.out.println("sleep 1s to wait for limitchase initial id");
             try {
-                Thread.sleep(2000);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -83,7 +83,7 @@ public class LimitChase {
 //                System.out.println("chaseloop");
 
                 try {
-                    Thread.sleep(2000);
+                    Thread.sleep(100);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
