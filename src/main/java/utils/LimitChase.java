@@ -55,7 +55,7 @@ public class LimitChase {
         Thread t = new Thread(()->{
 
 
-//        System.out.println("start limitchase " + buy + " " + size);
+        System.out.println("start limitchase " + buy + " " + size);
 
 //        System.out.println("bid: " + BidAsk.getBid());
 

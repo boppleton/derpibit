@@ -233,7 +233,7 @@ public class LimitChasePanel extends JPanel {
         sizePanel.setPreferredSize(new Dimension(130,65));
         sizePanel.setBorder(BorderFactory.createTitledBorder("size"));
 
-        sizeSpinner = new JSpinner(new SpinnerNumberModel(1000,.001,10000000,1000));
+        sizeSpinner = new JSpinner(new SpinnerNumberModel(1,.001,10000000,1000));
 
         sizePanel.add(sizeSpinner, BorderLayout.CENTER);
 

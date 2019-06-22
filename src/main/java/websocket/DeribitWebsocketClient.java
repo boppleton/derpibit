@@ -349,13 +349,13 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
     private void orderEventMessage(String message) {
 
-//        System.out.println("order event " + message);
+        System.out.println("order event " + message);
 
         String id = message.substring(message.indexOf("orderId\":") + 9, message.indexOf(",\"type"));
 
         String state = message.substring(message.indexOf("state\":\"") + 8, message.indexOf("\",\"post"));
 
-//        System.out.println("id: " + id + " state: " + state);
+        System.out.println("id: " + id + " state: " + state);
 
         for (LimitChase chase : LimitChaseContainer.getSingleChaseList()) {
             if (String.valueOf(chase.getPlacedId()).contains(id) && chase.isActive() && state.contains("filled")) {
@@ -367,9 +367,9 @@ public class DeribitWebsocketClient extends WebSocketClient {
             }
         }
 
-        lastOrderEventID = Long.parseLong(id.trim());
+        lastOrderEventID = Long.parseLong(id.replace("\"", ""));
 
-//        System.out.println("lasteventid: " + lastOrderEventID);
+        System.out.println("lasteventid: " + lastOrderEventID);
 
 
     }
