@@ -205,7 +205,7 @@ public class DeribitWebsocketClient extends WebSocketClient {
     ////
     //  limit, clean
     ///
-    public void limit(boolean buy, double contracts, double price, String s) throws NoSuchAlgorithmException {
+    public void limit(boolean buy, double contracts, double price, String s, boolean reduceOnly) throws NoSuchAlgorithmException {
 
         ArrayList<String> argnames = new ArrayList<>();
         ArrayList<String> argvalues = new ArrayList<>();
@@ -221,6 +221,9 @@ public class DeribitWebsocketClient extends WebSocketClient {
 
         argnames.add("quantity");
         argvalues.add(String.valueOf((int) contracts));
+
+        argnames.add("reduce_only");
+        argvalues.add(reduceOnly?"true":"false");
 
 
         post(buy ? "buy" : "sell", argnames, argvalues, "0", false);

@@ -20,13 +20,14 @@ public class ScaledOrder extends CustomOrder {
     private double lowerPrice;
     private String distribution;
     private int weight;
+    private boolean reduceonly;
 
 
     private static ArrayList<SingleTrade> trades = new ArrayList<>();
 
     private static String tradesString = "";
 
-    public ScaledOrder(boolean side, double totalAmount, int totalOrders, double upperPrice, double lowerPrice, String distribution, int weight) {
+    public ScaledOrder(boolean side, double totalAmount, int totalOrders, double upperPrice, double lowerPrice, String distribution, int weight, boolean reduceonly) {
         this.side = side;
         this.totalAmount = totalAmount;
         this.totalOrders = totalOrders;
@@ -34,6 +35,7 @@ public class ScaledOrder extends CustomOrder {
         this.lowerPrice = lowerPrice;
         this.distribution = distribution;
         this.weight = weight;
+        this.reduceonly = reduceonly;
 
         build();
     }
@@ -213,7 +215,8 @@ public class ScaledOrder extends CustomOrder {
 
         {
             trades.add(new SingleTrade(pair, orderType, (distributedTotal.get(i).intValue()<1?1:distributedTotal.get(i).intValue()), BigDecimal.valueOf(Formatter.roundForSymbol(prices.get(i), pair) )));
-            sb.append(orderType.toLowerCase() + " " + new BigDecimal(distributedTotal.get(i)).setScale(0, RoundingMode.HALF_DOWN) + " at " + Formatter.roundForSymbol(prices.get(i), pair) + "\n");
+            sb.append(orderType.toLowerCase() + " " + new BigDecimal(distributedTotal.get(i)).setScale(0, RoundingMode.HALF_DOWN) + " at " + Formatter.roundForSymbol(prices.get(i), pair) + (reduceonly?" -reduce":"") + "\n");
+
         }
 
         tradesString = sb.toString();

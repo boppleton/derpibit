@@ -62,6 +62,8 @@ public class ScaledOrderPanel extends JPanel {
 
     private static JPanel openOrdersPanel;
 
+    private JCheckBox reduceOnlyCheckbox;
+
     public ScaledOrderPanel(boolean buildDialog) {
 
         this.buildDialog = buildDialog;
@@ -269,7 +271,7 @@ public class ScaledOrderPanel extends JPanel {
 
                 System.out.println("placing order " + trade.getPair() + trade.getSide() + trade.getAmt() + "@ " + trade.getPrice());
 
-                DeribitWebsocketClient.getInstance().limit(trade.getSide().contains("Buy"), trade.getAmt(), trade.getPrice().doubleValue(), "limit" + System.currentTimeMillis());
+                DeribitWebsocketClient.getInstance().limit(trade.getSide().contains("Buy"), trade.getAmt(), trade.getPrice().doubleValue(), "limit" + System.currentTimeMillis(), reduceOnlyCheckbox.isSelected());
 
 
 
@@ -294,7 +296,7 @@ public class ScaledOrderPanel extends JPanel {
                     Double.parseDouble(upperPriceSpinner.getValue().toString()),
                     Double.parseDouble(lowerPriceSpinner.getValue().toString()),
                     distributionCombo.getSelectedItem().toString(),
-                    weightSlider.getValue());
+                    weightSlider.getValue(), reduceOnlyCheckbox.isSelected());
         } else {
 
             double upper;
@@ -318,7 +320,7 @@ public class ScaledOrderPanel extends JPanel {
                     upper,
                     lower,
                     distributionCombo.getSelectedItem().toString(),
-                    weightSlider.getValue());
+                    weightSlider.getValue(), reduceOnlyCheckbox.isSelected());
         }
 
 
@@ -674,8 +676,8 @@ public class ScaledOrderPanel extends JPanel {
         settingsPanel.setBorder(BorderFactory.createTitledBorder("settings"));
 
         //reduceonly
-        JCheckBox reduceOnlyCheckbox = new JCheckBox("reduce-only");
-        reduceOnlyCheckbox.setEnabled(false);
+        reduceOnlyCheckbox = new JCheckBox("reduce-only");
+        reduceOnlyCheckbox.setEnabled(true);
 
         gbc.anchor = GridBagConstraints.WEST;
 //        gbc.gridy++;

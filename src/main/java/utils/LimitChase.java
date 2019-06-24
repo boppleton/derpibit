@@ -60,7 +60,7 @@ public class LimitChase {
 //        System.out.println("bid: " + BidAsk.getBid());
 
         try {
-            DeribitWebsocketClient.getInstance().limit(buy, size, buy?BidAsk.getBid()+30:1, label);
+            DeribitWebsocketClient.getInstance().limit(buy, size, buy?BidAsk.getBid()+30:1, label, false);
         } catch (Exception e) {
             e.printStackTrace();
         }

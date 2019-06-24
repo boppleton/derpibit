@@ -13,7 +13,7 @@ public class GUI  extends JFrame {
         gui = this;
 
 
-        setTitle("derpibit v1.50");
+        setTitle("derpibit v1.51");
 
         GridBagConstraints gbc = new GridBagConstraints();
 
